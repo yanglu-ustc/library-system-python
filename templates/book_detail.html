@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Copies of "{{ book.title }}" by {{ book.author }}</h2>
+<p><strong>Total Copies:</strong> {{ book.num_books }} | <strong>Borrowed:</strong> {{ book.borrowed_count }}</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Box ID</th><th>Buy Date</th><th>Section</th><th>Status</th><th>Fine Status</th>
+            {% if session.user %}
+            <th>Action</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for box in boxes %}
+        <tr>
+            <td>{{ box.id }}</td>
+            <td>{{ box.buy_date }}</td>
+            <td>{{ box.section }}</td>
+            <td>{{ box.status }}</td>
+            <td>{{ box.fine }}</td>
+            {% if session.user %}
+            <td>
+                {% if box.status == 'Available' and box.fine_bool %}
+                    <form method="POST" action="{{ url_for('borrow', box_id=box.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-success btn-sm">Borrow</button>
+                    </form>
+                {% elif box.status == 'Available' and not box.fine_bool %}
+                    <span class="text-muted">Damaged (Not Borrowable)</span>
+                {% else %}
+                    <span class="text-muted">Borrowed</span>
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('books') }}" class="btn btn-secondary">Back to Books</a>
+{% endblock %}

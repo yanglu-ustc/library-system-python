@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>All Books</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th><th>Title</th><th>Author</th><th>Year</th><th>Price</th><th>Copies</th><th>Borrowed Count</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+        <tr>
+            <td>{{ book.book_id }}</td>
+            <td>{{ book.title }}</td>
+            <td>{{ book.author }}</td>
+            <td>{{ book.year or '' }}</td>
+            <td>${{ "%.2f"|format(book.price) if book.price else '' }}</td>
+            <td>{{ book.num_books }}</td>
+            <td>{{ book.borrowed_count }}</td>
+            <td><a href="{{ url_for('book_detail', book_id=book.book_id) }}" class="btn btn-sm btn-outline-primary">View Copies</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="mb-3">
+    <a href="{{ url_for('search') }}" class="btn btn-secondary">Advanced Search</a>
+    <a href="{{ url_for('return_page') }}" class="btn btn-warning">Return Book</a>
+    <a href="{{ url_for('borrow_records') }}" class="btn btn-info">Borrow Records</a>
+
+    {% if is_admin %}
+    <form method="POST" action="{{ url_for('throw_damaged') }}" style="display: inline;" 
+        onsubmit="return confirm('Are you sure you want to permanently delete all damaged books?');">
+        <button type="submit" class="btn btn-danger">Throw Away Damaged Books</button>
+    </form>
+    <a href="{{ url_for('set_damaged_form') }}" class="btn btn-outline-danger">Mark Book Box as Damaged</a>
+    <a href="{{ url_for('add_book') }}" class="btn btn-success">Add Book</a>
+    {% endif %}
+</div>
+{% endblock %}

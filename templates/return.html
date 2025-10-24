@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Return Books</h2>
+
+{% if borrowed_boxes %}
+    <p>You have <strong>{{ borrowed_boxes|length }}</strong> book(s) currently borrowed:</p>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Box ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Section</th>
+                <th>Borrow Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for box in borrowed_boxes %}
+            <tr>
+                <td>{{ box.id }}</td>
+                <td>{{ box.title }}</td>
+                <td>{{ box.author }}</td>
+                <td>{{ box.section }}</td>
+                <td>{{ box.borrow_date }}</td>
+                <td>{{ box.status }}</td>
+                <td>
+                    <a href="{{ url_for('return_confirm', box_id=box.id) }}" class="btn btn-warning btn-sm">Return</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="alert alert-success">
+        You have no borrowed books. Great job!
+    </div>
+{% endif %}
+
+<a href="{{ url_for('books') }}" class="btn btn-secondary">Back to Books</a>
+{% endblock %}

@@ -1,0 +1,12 @@
+<!-- templates/403.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center mt-5">
+    <h1>403 Forbidden</h1>
+    <p>You don't have permission to access this page.</p>
+    {% if session.user %}
+        <p>Logged in as: <strong>{{ session.user }}</strong></p>
+    {% endif %}
+    <a href="{{ url_for('books') }}" class="btn btn-primary">Go to Home</a>
+</div>
+{% endblock %}

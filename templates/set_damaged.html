@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Mark Book Box as Damaged</h2>
+<p>Enter the <strong>Book Box ID</strong> (from book detail or search results) to mark it as damaged.</p>
+
+<form method="POST" class="row g-2">
+    <div class="col-auto">
+        <input type="number" name="box_id" class="form-control" placeholder="Book Box ID" required>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-danger">Mark as Damaged</button>
+    </div>
+</form>
+
+<a href="{{ url_for('books') }}" class="btn btn-secondary mt-3">Back to Books</a>
+{% endblock %}

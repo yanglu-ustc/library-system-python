@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Confirm Return: "{{ box.title }}"</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Author:</strong> {{ box.author }}</p>
+        <p><strong>Section:</strong> {{ box.section }}</p>
+        <p><strong>Borrowed on:</strong> {{ box.borrow_date or box.buy_date }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="return_date" class="form-label">Return Date</label>
+        <input type="date" class="form-control" id="return_date" name="return_date" value="{{ today }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Book Condition</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="condition" id="condition_good" value="good" checked>
+            <label class="form-check-label" for="condition_good">
+                Good condition (fine = True)
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="condition" id="condition_damaged" value="damaged">
+            <label class="form-check-label" for="condition_damaged">
+                Damaged (fine = False, will be discarded later)
+            </label>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Confirm Return</button>
+    <a href="{{ url_for('return_page') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

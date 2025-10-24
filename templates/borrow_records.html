@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Borrow Records</h2>
+
+{% if is_admin %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Admin: Search by Username</h5>
+        <form method="POST" class="row g-2">
+            <div class="col-auto">
+                <input type="text" name="username" class="form-control" placeholder="Enter username (leave blank for all)" value="{{ target_user or '' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('borrow_records') }}" class="btn btn-outline-secondary">Show All</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if records %}
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Record ID</th>
+            <th>Borrower</th>
+            <th>Book Title</th>
+            <th>Author</th>
+            <th>Box ID</th>
+            <th>Section</th>
+            <th>Borrow Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+            <th>Fine</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in records %}
+        <tr>
+            <td>{{ r.record_id }}</td>
+            <td>{{ r.borrower }}</td>
+            <td>{{ r.title }}</td>
+            <td>{{ r.author }}</td>
+            <td>{{ r.box_id }}</td>
+            <td>{{ r.section }}</td>
+            <td>{{ r.borrow_date }}</td>
+            <td>{{ r.return_date or '—' }}</td>
+            <td>
+                <span class="badge bg-{% if r.status == 'Borrowed' %}warning{% else %}success{% endif %}">
+                    {{ r.status }}
+                </span>
+            </td>
+            <td>
+                <span class="badge bg-{% if r.fine %}success{% else %}danger{% endif %}">
+                    {{ "Good" if r.fine else "Damaged" }}
+                </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    {% if is_admin and target_user %}
+        No borrow records found for user <strong>{{ target_user }}</strong>.
+    {% elif is_admin %}
+        No borrow records found.
+    {% else %}
+        You have no borrow records.
+    {% endif %}
+</div>
+{% endif %}
+
+<a href="{{ url_for('books') }}" class="btn btn-secondary">Back to Books</a>
+{% endblock %}

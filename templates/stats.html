@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- 页面标题 -->
+    <h2 class="mb-6">📚 图书管理系统统计分析</h2>
+
+    <!-- 1. 全局概览 -->
+    <div class="card mb-6 shadow-sm hover-shadow transition-all duration-300">
+        <div class="card-header bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-bar-chart-line me-2"></i>全局概览
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                {% set overall = stats.overall[0] %}
+                <div class="col-md-3">
+                    <div class="stat-card p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <div class="stat-title text-gray-500 mb-1">图书种类数</div>
+                        <div class="stat-value h3 mb-0">{{ overall.total_titles }}</div>
+                        <div class="stat-icon text-blue-500 mt-2"><i class="bi bi-book"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <div class="stat-title text-gray-500 mb-1">平均价格（元）</div>
+                        <div class="stat-value h3 mb-0">{{ "%.2f"|format(overall.avg_price) if overall.avg_price else '—' }}</div>
+                        <div class="stat-icon text-green-500 mt-2"><i class="bi bi-cash"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <div class="stat-title text-gray-500 mb-1">馆藏总价值（元）</div>
+                        <div class="stat-value h3 mb-0">{{ "%.2f"|format(overall.total_value) if overall.total_value else '—' }}</div>
+                        <div class="stat-icon text-purple-500 mt-2"><i class="bi bi-piggy-bank"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <div class="stat-title text-gray-500 mb-1">总副本数</div>
+                        <div class="stat-value h3 mb-0">{{ overall.total_copies }}</div>
+                        <div class="stat-icon text-amber-500 mt-2"><i class="bi bi-files"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 分组统计（带清晰图表名） -->
+    {% for group_name, group_data in stats.items() %}
+        {% if group_name != 'overall' and group_data %}
+            <!-- 先定义分组名称的中文显示 -->
+            {% set group_cn = {
+                'location': '按区域分布',
+                'author': '按作者分布',
+                'year': '按出版年份分布',
+                'status': '按借阅状态分布',
+                'fine': '按完好状态分布',
+                'borrower': '按借阅人分布',
+                'buy_date': '按采购日期分布'
+            }[group_name] %}
+            <div class="card mb-6 shadow-sm hover-shadow transition-all duration-300">
+                <div class="card-header bg-gradient-to-r from-gray-700 to-gray-800 text-white">
+                    <h4 class="mb-0 d-flex align-items-center">
+                        <!-- 原始图标 + 分组名 -->
+                        {% if group_name == 'location' %}
+                            <i class="bi bi-geo-alt me-2"></i>
+                        {% elif group_name == 'author' %}
+                            <i class="bi bi-pen me-2"></i>
+                        {% elif group_name == 'year' %}
+                            <i class="bi bi-calendar me-2"></i>
+                        {% elif group_name == 'status' %}
+                            <i class="bi bi-check-circle me-2"></i>
+                        {% elif group_name == 'fine' %}
+                            <i class="bi bi-shield me-2"></i>
+                        {% elif group_name == 'borrower' %}
+                            <i class="bi bi-people me-2"></i>
+                        {% elif group_name == 'buy_date' %}
+                            <i class="bi bi-cart me-2"></i>
+                        {% else %}
+                            <i class="bi bi-tag me-2"></i>
+                        {% endif %}
+                        <!-- 动态标题：分组名 + 当前指标（初始为“副本数”） -->
+                        <span id="card-title-{{ group_name }}">{{ group_cn }} - 副本数</span>
+                    </h4>
+                </div>
+                <div class="card-body p-5">
+                    <!-- 指标切换按钮组 -->
+                    <div class="btn-group mb-4" role="group" aria-label="指标切换">
+                        <button type="button" class="btn btn-primary active" data-group="{{ group_name }}" data-indicator="total_copies" data-group-cn="{{ group_cn }}">
+                            副本数
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-group="{{ group_name }}" data-indicator="avg_price" data-group-cn="{{ group_cn }}">
+                            平均价格
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-group="{{ group_name }}" data-indicator="total_value" data-group-cn="{{ group_cn }}">
+                            总价值
+                        </button>
+                    </div>
+                    <!-- 图表容器：内部将添加图表标题 -->
+                    <div id="chart-{{ group_name }}" class="chart-container" style="width: 100%; height: 450px;"></div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- 引入依赖 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stats = {{ stats|tojson }};
+    const chartTypeMap = {
+        location: 'pie',
+        author: 'pie',
+        year: 'bar',
+        status: 'pie',
+        fine: 'pie',
+        borrower: 'pie',
+        buy_date: 'bar'
+    };
+    const indicatorConfig = {
+        total_copies: { name: '副本数', unit: '本', format: (v) => v || 0 },
+        avg_price: { name: '平均价格', unit: '元', format: (v) => v ? parseFloat(v).toFixed(2) : 0 },
+        total_value: { name: '总价值', unit: '元', format: (v) => v ? parseFloat(v).toFixed(2) : 0 }
+    };
+    const colorThemes = {
+        pie: ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6', '#ec4899'],
+        bar: [{ type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#3b82f6'},{offset:1,color:'#60a5fa'}]}]
+    };
+
+    // 初始化图表实例
+    const charts = {};
+    for (const groupName in stats) {
+        if (groupName === 'overall' || !stats[groupName].length) continue;
+        const chartDom = document.getElementById(`chart-${groupName}`);
+        charts[groupName] = echarts.init(chartDom);
+        // 初始渲染（默认副本数）
+        renderChart(groupName, 'total_copies');
+    }
+
+    // 指标切换事件：同步更新【卡片标题】和【图表】
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const groupName = this.dataset.group;
+            const indicator = this.dataset.indicator;
+            const groupCn = this.dataset.groupCn; // 分组中文名称（如“按区域分布”）
+            const indicatorCn = indicatorConfig[indicator].name; // 指标中文名称（如“副本数”）
+            
+            // 1. 更新按钮样式
+            this.parentElement.querySelectorAll('button').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary', 'active');
+
+            // 2. 更新卡片标题（核心：分组名 + 指标名）
+            const cardTitleEl = document.getElementById(`card-title-${groupName}`);
+            cardTitleEl.textContent = `${groupCn} - ${indicatorCn}`;
+
+            // 3. 重绘图表（同步更新图表内部标题）
+            renderChart(groupName, indicator);
+        });
+    });
+
+    // 核心：渲染图表（新增图表内部标题）
+    function renderChart(groupName, indicator) {
+        const groupData = stats[groupName];
+        const chart = charts[groupName];
+        const config = indicatorConfig[indicator];
+        const chartType = chartTypeMap[groupName];
+        const groupCn = document.querySelector(`button[data-group="${groupName}"]`).dataset.groupCn;
+        const chartFullTitle = `${groupCn} - ${config.name}`; // 图表完整标题（如“按区域分布 - 副本数”）
+
+        // 处理分组标签（如状态映射）
+        const getGroupName = (item) => {
+            let name = item.group_key;
+            if (groupName === 'status') name = item.group_key === false ? '未借出' : '已借出';
+            else if (groupName === 'fine') name = item.group_key === true ? '完好' : '损坏';
+            else if (groupName === 'borrower') name = item.group_key || '未借阅';
+            else if (!name) name = '未分类';
+            return name.length > 12 ? name.substring(0, 12) + '...' : name;
+        };
+
+        // 处理图表数据
+        let chartData = [];
+        if (chartType === 'pie') {
+            chartData = groupData.map(item => ({
+                name: getGroupName(item),
+                value: config.format(item[indicator])
+            }));
+        } else if (chartType === 'bar') {
+            chartData = {
+                xData: groupData.map(item => getGroupName(item)),
+                yData: groupData.map(item => config.format(item[indicator]))
+            };
+        }
+
+        // 通用配置 + 新增【图表内部标题】
+        const commonOptions = {
+            backgroundColor: 'transparent',
+            animation: true,
+            animationDuration: 1500,
+            // 图表内部标题（位置：顶部居中，字体醒目）
+            title: {
+                text: chartFullTitle,
+                left: 'center',
+                top: '5%',
+                textStyle: {
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: '#333'
+                },
+                padding: [0, 0, 20, 0] // 底部留空，避免遮挡图表
+            }
+        };
+
+        // 饼图配置（含标题）
+        let chartOption = {};
+        if (chartType === 'pie') {
+            chartOption = {
+                ...commonOptions,
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    formatter: `${config.name}：<strong>{c}</strong>${config.unit} ({d}%)`
+                },
+                legend: {
+                    orient: groupData.length > 6 ? 'vertical' : 'horizontal',
+                    left: groupData.length > 6 ? 'left' : 'center',
+                    top: groupData.length > 6 ? 'center' : 'bottom',
+                    textStyle: { color: '#666' },
+                    formatter: (name) => name.length > 8 ? name.substring(0, 8) + '...' : name
+                },
+                series: [{
+                    name: `${config.name}（${config.unit}）`, // 图例名称带单位
+                    type: 'pie',
+                    radius: groupData.length > 10 ? ['30%', '70%'] : ['40%', '70%'],
+                    center: ['50%', '55%'], // 下移，给顶部标题留空间
+                    color: colorThemes.pie,
+                    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
+                    emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+                    labelLine: { show: false },
+                    data: chartData
+                }]
+            };
+        }
+
+        // 柱状图配置（含标题）
+        else if (chartType === 'bar') {
+            chartOption = {
+                ...commonOptions,
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    formatter: `${config.name}：<strong>{c}</strong>${config.unit}`
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '15%', // 上移，给顶部标题留空间
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: chartData.xData,
+                    axisLabel: { color: '#666', rotate: chartData.xData.length > 8 ? 45 : 0 }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: `${config.name}（${config.unit}）`, // y轴标题带单位
+                    nameTextStyle: { color: '#666' },
+                    axisLabel: { color: '#666', formatter: (v) => config.format(v) }
+                },
+                series: [{
+                    name: `${config.name}（${config.unit}）`, // 图例名称带单位
+                    type: 'bar',
+                    data: chartData.yData,
+                    itemStyle: { color: colorThemes.bar[0], borderRadius: [4, 4, 0, 0] }
+                }]
+            };
+        }
+
+        chart.setOption(chartOption);
+    }
+
+    // 窗口 resize 重绘
+    window.addEventListener('resize', () => {
+        for (const groupName in charts) charts[groupName].resize();
+    });
+
+    // 卡片悬停效果
+    document.querySelectorAll('.chart-container').forEach(container => {
+        const groupName = container.id.replace('chart-', '');
+        const chart = charts[groupName];
+        container.closest('.card').addEventListener('mouseenter', () => {
+            chart.dispatchAction({ type: 'highlight', seriesIndex: 0 });
+        });
+        container.closest('.card').addEventListener('mouseleave', () => {
+            chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+        });
+    });
+});
+</script>
+
+<style>
+/* 原有样式 + 标题样式优化 */
+.stat-card { transition: all 0.3s ease; }
+.stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+.hover-shadow:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.transition-all { transition: all 0.3s ease; }
+.chart-container { position: relative; }
+.btn-group .btn { margin-right: 8px; }
+.btn-group .btn:last-child { margin-right: 0; }
+/* 图表标题样式补充（防止与其他元素冲突） */
+.echarts-title { font-size: 16px !important; font-weight: bold !important; }
+</style>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Advanced Search</h2>
+
+<form method="POST" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-control" name="title" value="{{ filters.title or '' }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Author</label>
+        <input type="text" class="form-control" name="author" value="{{ filters.author or '' }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Book ID</label>
+        <input type="number" class="form-control" name="book_id" value="{{ filters.book_id or '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Year From</label>
+        <input type="number" class="form-control" name="year_min" value="{{ filters.year_min or '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Year To</label>
+        <input type="number" class="form-control" name="year_max" value="{{ filters.year_max or '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Price ≥</label>
+        <input type="number" step="0.01" class="form-control" name="price_min" value="{{ filters.price_min or '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Price ≤</label>
+        <input type="number" step="0.01" class="form-control" name="price_max" value="{{ filters.price_max or '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Location</label>
+        <select class="form-select" name="location">
+            <option value="">Any</option>
+            {% for loc_id, name in sections %}
+            <option value="{{ loc_id }}" {% if filters.location == loc_id %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="borrow">
+            <option value="">Any</option>
+            <option value="available" {% if filters.borrow == false %}selected{% endif %}>Available</option>
+            <option value="borrowed" {% if filters.borrow == true %}selected{% endif %}>Borrowed</option>
+        </select>
+    </div>
+    {% if is_admin %}
+    <div class="col-md-3">
+        <label class="form-label">Borrower</label>
+        <input type="text" class="form-control" name="borrower" value="{{ filters.borrower or '' }}">
+    </div>
+    {% endif %}
+    <div class="col-md-3">
+        <label class="form-label">Fine Status</label>
+        <select class="form-select" name="fine">
+            <option value="">Any</option>
+            <option value="yes" {% if filters.fine == true %}selected{% endif %}>Yes</option>
+            <option value="no" {% if filters.fine == false %}selected{% endif %}>No (to discard)</option>
+        </select>
+    </div>
+    <!-- 在 </form> 之前添加 -->
+    <div class="col-12 mt-3">
+        <h5>Sorting</h5>
+    </div>
+
+    <!-- Sort Level 1 -->
+    <div class="col-md-4">
+        <label class="form-label">Sort 1</label>
+        <div class="input-group">
+            <select class="form-select" name="sort_by_1">
+                <option value="">None</option>
+                {% for value, label in sort_options %}
+                <option value="{{ value }}" {% if filters.sort_by_1 == 'b.'+value or filters.sort_by_1 == 'ls.section_name' or filters.sort_by_1 == 'bb.buy_date' or filters.sort_by_1 == 'bb.be_borrowed' %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="sort_order_1" style="max-width: 100px;">
+                <option value="asc" {% if filters.sort_order_1 == 'asc' %}selected{% endif %}>↑ ASC</option>
+                <option value="desc" {% if filters.sort_order_1 == 'desc' %}selected{% endif %}>↓ DESC</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Sort Level 2 -->
+    <div class="col-md-4">
+        <label class="form-label">Sort 2</label>
+        <div class="input-group">
+            <select class="form-select" name="sort_by_2">
+                <option value="">None</option>
+                {% for value, label in sort_options %}
+                <option value="{{ value }}" {% if filters.sort_by_2 == 'b.'+value or filters.sort_by_2 == 'ls.section_name' or filters.sort_by_2 == 'bb.buy_date' or filters.sort_by_2 == 'bb.be_borrowed' %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="sort_order_2" style="max-width: 100px;">
+                <option value="asc" {% if filters.sort_order_2 == 'asc' %}selected{% endif %}>↑ ASC</option>
+                <option value="desc" {% if filters.sort_order_2 == 'desc' %}selected{% endif %}>↓ DESC</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Sort Level 3 -->
+    <div class="col-md-4">
+        <label class="form-label">Sort 3</label>
+        <div class="input-group">
+            <select class="form-select" name="sort_by_3">
+                <option value="">None</option>
+                {% for value, label in sort_options %}
+                <option value="{{ value }}" {% if filters.sort_by_3 == 'b.'+value or filters.sort_by_3 == 'ls.section_name' or filters.sort_by_3 == 'bb.buy_date' or filters.sort_by_3 == 'bb.be_borrowed' %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="sort_order_3" style="max-width: 100px;">
+                <option value="asc" {% if filters.sort_order_3 == 'asc' %}selected{% endif %}>↑ ASC</option>
+                <option value="desc" {% if filters.sort_order_3 == 'desc' %}selected{% endif %}>↓ DESC</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{{ url_for('search') }}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{% if results %}
+<h3>Results ({{ total_count }})</h3>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>ID</th><th>Box ID</th><th>Title</th><th>Author</th><th>Year</th><th>Price</th>
+            <th>Buy Date</th><th>Section</th><th>Status</th><th>Fine</th>
+            {% if session.user %}<th>Action</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in results %}
+        <tr>
+            <td>{{ r.book_id }}</td>
+            <td>{{ r.id }}</td>
+            <td>{{ r.title }}</td>
+            <td>{{ r.author }}</td>
+            <td>{{ r.year or '' }}</td>
+            <td>${{ "%.2f"|format(r.price) if r.price else '' }}</td>
+            <td>{{ r.buy_date }}</td>
+            <td>{{ r.section }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.fine }}</td>
+            {% if session.user %}
+            <td>
+                {% if r.status == 'Available' and r.fine_bool %}
+                    <form method="POST" action="{{ url_for('borrow', box_id=r.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-success btn-sm">Borrow</button>
+                    </form>
+                {% elif r.status == 'Available' and not r.fine_bool %}
+                    <span class="text-muted">Damaged</span>
+                {% else %}
+                    <span class="text-muted">Borrowed</span>
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif request.method == 'POST' %}
+<div class="alert alert-info">No books match your criteria.</div>
+{% endif %}
+
+<a href="{{ url_for('books') }}" class="btn btn-secondary">Back to Books</a>
+{% endblock %}
