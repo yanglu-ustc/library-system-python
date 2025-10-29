@@ -42,7 +42,8 @@ CREATE TABLE borrow_records (
     borrower VARCHAR(255) NOT NULL,
     borrow_date DATE NOT NULL,
     return_date DATE DEFAULT NULL,
-    FOREIGN KEY (book_box_id) REFERENCES book_boxes(id)
+    FOREIGN KEY (book_box_id) REFERENCES book_boxes(id),
+    FOREIGN KEY (borrower) REFERENCES users(username)
 );
 
 
